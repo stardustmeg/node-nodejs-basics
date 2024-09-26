@@ -1,3 +1,1 @@
-export const errors = {
-  FILE_EXISTS: 'FS operation failed: file already exists',
-};
+export const ERROR_MESSAGE = 'FS operation failed';
