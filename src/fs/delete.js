@@ -1,23 +1,33 @@
-import { promises as fs } from 'fs';
+import { unlink, access, constants } from 'node:fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ERROR_MESSAGE } from '../constants/errors.js';
 
-const getDirPath = (dirName) => {
+const getFilePath = (fileName) => {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  return path.join(__dirname, dirName);
+  return path.join(__dirname, 'files', fileName);
 };
 
-const remove = async () => {
-  const filePath = path.join(getDirPath('files'), 'fileToRemove.txt');
+const fileExists = async (filePath) => {
   try {
-    await fs.unlink(filePath);
+    await access(filePath, constants.F_OK);
+    return true;
   } catch (err) {
     if (err.code === 'ENOENT') {
-      throw new Error(ERROR_MESSAGE);
+      return false;
     }
     throw err;
   }
+};
+
+const remove = async () => {
+  const filePath = getFilePath('fileToRemove.txt');
+
+  if (!(await fileExists(filePath))) {
+    throw new Error(ERROR_MESSAGE);
+  }
+
+  await unlink(filePath);
 };
 
 await remove();
