@@ -1,4 +1,4 @@
-import fsPromises, { access, constants } from 'node:fs/promises';
+import { access, constants, rename as fsRename } from 'node:fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ERROR_MESSAGE } from '../constants/errors.js';
@@ -8,26 +8,27 @@ const MODULE_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const wrongFilenamePath = path.join(MODULE_DIRECTORY, 'files', 'wrongFilename.txt');
 const properFilenamePath = path.join(MODULE_DIRECTORY, 'files', 'properFilename.md');
 
-const rename = async () => {
+const fileExists = async (filePath) => {
   try {
-    await access(wrongFilenamePath, constants.F_OK);
-    try {
-      await access(properFilenamePath, constants.F_OK);
-      throw new Error(ERROR_MESSAGE);
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        await fsPromises.rename(wrongFilenamePath, properFilenamePath);
-      } else {
-        throw err;
-      }
-    }
+    await access(filePath, constants.F_OK);
+    return true;
   } catch (err) {
     if (err.code === 'ENOENT') {
-      throw new Error(ERROR_MESSAGE);
-    } else {
-      throw err;
+      return false;
     }
+    throw err;
   }
+};
+
+const rename = async () => {
+  const sourceExists = await fileExists(wrongFilenamePath);
+  const destinationExists = await fileExists(properFilenamePath);
+
+  if (!sourceExists || destinationExists) {
+    throw new Error(ERROR_MESSAGE);
+  }
+
+  await fsRename(wrongFilenamePath, properFilenamePath);
 };
 
 await rename();
