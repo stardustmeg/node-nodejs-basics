@@ -1,4 +1,4 @@
-import fsPromises from 'node:fs/promises';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'url';
 import { pipeline } from 'node:stream/promises';
@@ -11,16 +11,20 @@ const destFile = path.resolve(MODULE_DIRECTORY, FILES_DIR, 'archive.gz');
 const ERROR_MESSAGE = 'FS operation failed';
 
 const compress = async () => {
+  let readStream, writeStream;
   try {
-    const srcFh = await fsPromises.open(sourceFile);
-    const destFh = await fsPromises.open(destFile, 'w');
+    readStream = fs.createReadStream(sourceFile);
+    writeStream = fs.createWriteStream(destFile);
     const gzip = zlib.createGzip();
-    const readStream = srcFh.createReadStream();
-    const writeStream = destFh.createWriteStream();
 
     await pipeline(readStream, gzip, writeStream);
-  } catch {
+    console.log('File compressed successfully');
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
     throw new Error(ERROR_MESSAGE);
+  } finally {
+    readStream?.close();
+    writeStream?.close();
   }
 };
 

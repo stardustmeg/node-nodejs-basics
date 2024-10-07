@@ -1,18 +1,20 @@
 import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import os from 'node:os';
 
-const transform = async () => {
-  const reverseStream = new Transform({
+const createReverseStream = () =>
+  new Transform({
     transform(chunk, encoding, callback) {
       const reversedChunk = chunk.toString().trimEnd().split('').reverse().join('');
       callback(null, `${reversedChunk}${os.EOL}`);
     },
   });
 
+const transform = async () => {
   try {
-    process.stdin.pipe(reverseStream).pipe(process.stdout);
+    await pipeline(process.stdin, createReverseStream(), process.stdout);
   } catch (err) {
-    console.error(`An error occured: ${err}`);
+    console.error(`An error occurred: ${err.message}`);
     process.exitCode = 1;
   }
 };

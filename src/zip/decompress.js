@@ -12,8 +12,7 @@ const ERROR_MESSAGE = 'FS operation failed';
 
 const decompress = async () => {
   try {
-    const srcFh = await fsPromises.open(sourceFile);
-    const destFh = await fsPromises.open(destFile, 'w');
+    const [srcFh, destFh] = await Promise.all([fsPromises.open(sourceFile), fsPromises.open(destFile, 'w')]);
     const gunzip = zlib.createGunzip();
     const readStream = srcFh.createReadStream();
     const writeStream = destFh.createWriteStream();

@@ -1,5 +1,5 @@
-import { once } from 'node:events';
-import fsPromises from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'url';
 import { ERROR_MESSAGE } from '../constants/errors.js';
@@ -9,13 +9,17 @@ const file = path.resolve(MODULE_DIRECTORY, 'files', 'fileToWrite.txt');
 
 const write = async () => {
   try {
-    const handle = await fsPromises.open(file, 'w');
-    const writeStream = handle.createWriteStream();
+    const writeStream = fs.createWriteStream(file);
 
-    process.stdin.pipe(writeStream);
+    process.on('SIGINT', () => {
+      console.log('\nProcess interrupted. Closing the write stream.');
+      writeStream.end();
+      process.exit(0);
+    });
 
-    await once(writeStream, 'finish');
-  } catch {
+    await pipeline(process.stdin, writeStream);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
     throw new Error(ERROR_MESSAGE);
   }
 };
